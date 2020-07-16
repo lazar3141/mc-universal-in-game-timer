@@ -22,6 +22,7 @@ from nbt.nbt import NBTFile
 
 import sys
 import os
+import json
 
 import utils
 
@@ -32,18 +33,33 @@ __version__ = open(os.path.join(DIRECTORY, "VERSION.txt")).read()
 SETTINGS = QSettings(QSettings.NativeFormat, QSettings.UserScope, "Minecraft Universal In-Game Timer")
 
 
-def get_last_played_level(mc_dir=None):
+def get_last_played_level():
     levels = []
-    if mc_dir is None:
-        mc_dir = SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir())
-
-    mc_saves = os.path.join(mc_dir, "saves")
+    mc_saves = os.path.join(SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir()), "saves")
     for world in os.listdir(mc_saves):
         try:
-            levels.append(NBTFile(os.path.join(mc_saves, world, "level.dat")))
+            level = NBTFile(os.path.join(mc_saves, world, "level.dat"))
+            with open(os.path.join(mc_saves, world, "stats", os.listdir(os.path.join(mc_saves, world, "stats"))[0]), "r") as f:
+                stats = json.load(f)
+
+            try:
+                data = {
+                    "name": str(level["Data"]["LevelName"]),
+                    "last_played": int(str(level["Data"]["LastPlayed"])),
+                    "version": str(level["Data"]["Version"]["Name"]),
+                    "igt": stats["stats"]["minecraft:custom"]["minecraft:play_one_minute"]
+                }
+            except:
+                data = {
+                    "name": str(level["Data"]["LevelName"]),
+                    "last_played": int(str(level["Data"]["LastPlayed"])),
+                    "version": "Pre 1.9",
+                    "igt": stats["stats"]["minecraft:custom"]["minecraft:play_one_minute"]
+                }
+            levels.append(data)
         except:
             continue
-    return sorted(levels, key=lambda t: int(str(t["Data"]["LastPlayed"])), reverse=True)[0]["Data"]
+    return sorted(levels, key=lambda d: d["last_played"], reverse=True)[0]
 
 
 class SettingsWindow(QMainWindow):
@@ -173,12 +189,9 @@ class TimerWindow(QMainWindow):
     def update_igt(self):
         try:
             level_data = get_last_played_level()
-            try:
-                self.world_name.setText(f"{str(level_data['LevelName'])} ({str(level_data['Version']['Name'])})")
-            except:
-                self.world_name.setText(f"{str(level_data['LevelName'])} (Pre 1.9)")
+            self.world_name.setText(f"{level_data['name']} ({level_data['version']})")
 
-            ticks = int(str(level_data["Time"]))
+            ticks = level_data["igt"]
             seconds = ticks // 20
             h = str(seconds // 60 // 60)
             m = str(seconds // 60 % 60)
