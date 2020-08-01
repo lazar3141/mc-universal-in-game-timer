@@ -22,7 +22,7 @@ from nbt.nbt import NBTFile
 
 import sys
 import os
-import json
+import rapidjson as json
 
 import utils
 
@@ -84,14 +84,17 @@ class SettingsWindow(QMainWindow):
         self.opacity_slider.setTickInterval(10)
         self.opacity_slider.setTickPosition(QSlider.TicksBothSides)
         self.opacity_slider.valueChanged.connect(self.change_opacity_percentage)
-        self.opacity_slider.setValue(int(float(SETTINGS.value("Opacity", 0.5)*100)))
+        self.opacity_slider.setValue(int(float(SETTINGS.value("Opacity", 0.5))*100))
 
         if SETTINGS.value("Theme", "dark") == "dark":
             self.dark_theme_button.setChecked(True)
         else:
             self.light_theme_button.setChecked(True)
 
-        self.continue_button.setText("Save  (double-click)")
+        if sys.platform == "darwin":
+            self.continue_button.setText("Save  (double-click)") #* idk why this bug exists
+        else:
+            self.continue_button.setText("Save")
         self.continue_button.clicked.connect(self.save_and_exit_settings)
 
         self.setFixedSize(420, 420)
