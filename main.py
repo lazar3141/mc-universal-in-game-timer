@@ -36,6 +36,7 @@ SETTINGS = QSettings(QSettings.NativeFormat, QSettings.UserScope, "Minecraft Uni
 def get_last_played_level():
     levels = []
     mc_saves = os.path.join(SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir()), "saves")
+
     for world in os.listdir(mc_saves):
         try:
             level = NBTFile(os.path.join(mc_saves, world, "level.dat"))
@@ -59,6 +60,7 @@ def get_last_played_level():
             levels.append(data)
         except:
             continue
+
     return sorted(levels, key=lambda d: d["last_played"], reverse=True)[0]
 
 
@@ -184,7 +186,7 @@ class TimerWindow(QMainWindow):
         self.move(int(SETTINGS.value("TimerPosX", 0)), int(SETTINGS.value("TimerPosY", 0)))
 
         self.show()
-        self.timer.start(500)
+        self.timer.start(200)
 
     def update_igt(self):
         try:
@@ -200,7 +202,7 @@ class TimerWindow(QMainWindow):
 
             self.igt.setText(f"{h.zfill(2)}:{m.zfill(2)}:{s.zfill(2)}.{ms.zfill(3)}")
             self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.igt.sizeHint().width()]) + 16)
-        except FileNotFoundError:
+        except:
             self.world_name.setText("ERROR:  No World Found")
             self.world_name.setStyleSheet("color: red;")
             self.igt.setText("--:--:--.---")
@@ -218,7 +220,11 @@ class TimerWindow(QMainWindow):
         SettingsWindow(self)
 
     def mousePressEvent(self, event):
+        self.timer.stop()
         self.oldPos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        self.timer.start(200)
 
     def mouseMoveEvent(self, event):
         try:
