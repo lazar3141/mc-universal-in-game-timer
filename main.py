@@ -24,10 +24,12 @@ import rapidjson as json
 import sys
 import os
 
-import settings
 import utils
 
-DIRECTORY = os.path.dirname(__file__)
+try:
+    DIRECTORY = sys._MEIPASS
+except:
+    DIRECTORY = os.path.dirname(__file__)
 
 __version__ = open(os.path.join(DIRECTORY, "VERSION.txt")).read()
 
@@ -65,11 +67,11 @@ def get_last_played_level():
     return sorted(levels, key=lambda d: d["last_played"], reverse=True)[0]
 
 
-class SettingsWindow(QMainWindow, settings.Ui_SettingsWindow):
+class SettingsWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
-        super(SettingsWindow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        self.setupUi(self)
+        uic.loadUi(os.path.join(DIRECTORY, "SettingsWindow.ui"), self)
         self.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.setWindowIcon(QIcon(os.path.join(DIRECTORY, "Resources", "icons.ico")))
 
