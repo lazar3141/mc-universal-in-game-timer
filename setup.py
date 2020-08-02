@@ -10,7 +10,7 @@ import os
 setup(
     name="Minecraft Universal In-Game Timer",
     app=["main.py"],
-    data_files=["VERSION.txt", "SettingsWindow.ui"],
+    data_files=["VERSION.txt"],
     options={"py2app": {
         "packages": ["PyQt5", "nbt"],
         "iconfile": os.path.join("Resources", "icons.icns"),
