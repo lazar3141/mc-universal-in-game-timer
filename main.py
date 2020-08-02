@@ -19,11 +19,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5 import uic
 from nbt.nbt import NBTFile
+import rapidjson as json
 
 import sys
 import os
-import rapidjson as json
 
+import settings
 import utils
 
 DIRECTORY = os.path.dirname(__file__)
@@ -64,12 +65,13 @@ def get_last_played_level():
     return sorted(levels, key=lambda d: d["last_played"], reverse=True)[0]
 
 
-class SettingsWindow(QMainWindow):
+class SettingsWindow(QMainWindow, settings.Ui_SettingsWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(SettingsWindow, self).__init__(*args, **kwargs)
 
-        uic.loadUi(os.path.join(DIRECTORY, "SettingsWindow.ui"), self)
+        self.setupUi(self)
         self.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self.setWindowIcon(QIcon(os.path.join(DIRECTORY, "Resources", "icons.ico")))
 
         self.author_text.linkActivated.connect(self.open_link)
         self.author_text.setText(f"By NinjaSnail1080\u3000|\u3000<a href='https://github.com/NinjaSnail1080/mc-universal-in-game-timer'>Github</a> (v{__version__})")
