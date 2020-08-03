@@ -3,8 +3,6 @@
 
 Copyright © 2020 NinjaSnail1080 (Discord User: @NinjaSnail1080#8581)
 
-Licensed under the GNU General Public License v3.0. See LICENSE.txt for details
-
 ---
 
 Minecraftia font by [Andrew Tyler](https://ajtyler.co/)
