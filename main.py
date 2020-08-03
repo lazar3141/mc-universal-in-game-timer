@@ -139,6 +139,7 @@ class TimerWindow(QMainWindow):
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setWindowOpacity(float(SETTINGS.value("Opacity", 0.5)))
+        self.setWindowIcon(QIcon(os.path.join(DIRECTORY, "Resources", "icons.ico")))
 
         with open(os.path.join(DIRECTORY, "Resources", "Minecraftia-Regular-1.ttf"), "rb") as f:
             self.small_font = QFont(QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFontFromData(f.read()))[0], 12)
