@@ -38,28 +38,49 @@ SETTINGS = QSettings(QSettings.NativeFormat, QSettings.UserScope, "Minecraft Uni
 
 def get_last_played_level():
     levels = []
-    mc_saves = os.path.join(SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir()), "saves")
+    mc_dir = SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir())
+    mc_saves = os.path.join(mc_dir, "saves")
+
+    if os.path.exists(os.path.join(mc_dir, "stats")):
+        with open(os.path.join(mc_dir, "stats", os.listdir(os.path.join(mc_dir, "stats"))[0])) as f:
+            pre17_stats = json.load(f)
 
     for world in os.listdir(mc_saves):
         try:
             level = NBTFile(os.path.join(mc_saves, world, "level.dat"))
-            with open(os.path.join(mc_saves, world, "stats", os.listdir(os.path.join(mc_saves, world, "stats"))[0]), "r") as f:
-                stats = json.load(f)
+            if not int(str(level["Data"]["Time"])):
+                continue
+            try:
+                with open(os.path.join(mc_saves, world, "stats", os.listdir(os.path.join(mc_saves, world, "stats"))[0]), "r") as f:
+                    stats = json.load(f)
+            except: #* If it's pre 1.7.2
+                stats = None
 
             try:
                 data = {
                     "name": str(level["Data"]["LevelName"]),
                     "last_played": int(str(level["Data"]["LastPlayed"])),
                     "version": str(level["Data"]["Version"]["Name"]),
-                    "igt": stats["stats"]["minecraft:custom"]["minecraft:play_one_minute"]
+                    "igt": stats["stat.playOneMinute"] if int(str(level["Data"]["Version"]["Id"])) < 1451 else stats["stats"]["minecraft:custom"]["minecraft:play_one_minute"],
+                    "pre17": False
                 }
-            except:
-                data = {
-                    "name": str(level["Data"]["LevelName"]),
-                    "last_played": int(str(level["Data"]["LastPlayed"])),
-                    "version": "Pre 1.9",
-                    "igt": stats["stats"]["minecraft:custom"]["minecraft:play_one_minute"]
-                }
+            except: #* If it's pre 1.9
+                try:
+                    data = {
+                        "name": str(level["Data"]["LevelName"]),
+                        "last_played": int(str(level["Data"]["LastPlayed"])),
+                        "version": "Pre 1.9",
+                        "igt": stats["stat.playOneMinute"],
+                        "pre17": False
+                    }
+                except: #* If it's pre 1.7.2
+                    data = {
+                        "name": str(level["Data"]["LevelName"]),
+                        "last_played": int(str(level["Data"]["LastPlayed"])),
+                        "version": "Pre 1.7.2",
+                        "igt": next(i for i in pre17_stats["stats-change"] if "1100" in i)["1100"],
+                        "pre17": True
+                    }
             levels.append(data)
         except:
             continue
@@ -161,6 +182,8 @@ class TimerWindow(QMainWindow):
         self.toolbar.setIconSize(QSize(16, 16))
         self.addToolBar(self.toolbar)
 
+        self.pre17_toolbar = QToolBar("Pre 1.7 Toolbar")
+
         if SETTINGS.value("Theme", "dark") == "dark":
             self.close_button = QAction(QIcon(os.path.join(DIRECTORY, "Resources", "white_x")), "", self)
             self.settings_button = QAction(QIcon(os.path.join(DIRECTORY, "Resources", "white_gear")), "", self)
@@ -174,6 +197,11 @@ class TimerWindow(QMainWindow):
         if SETTINGS.value("Theme", "dark") == "dark":
             self.world_name.setStyleSheet("color: white;")
         self.world_name.setFont(self.small_font)
+
+        self.right_click_text = QLabel("Right-click to reset timer")
+        if SETTINGS.value("Theme", "dark") == "dark":
+            self.right_click_text.setStyleSheet("color: white;")
+        self.right_click_text.setFont(self.small_font)
 
         self.left_spacer = QWidget()
         self.left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -189,9 +217,23 @@ class TimerWindow(QMainWindow):
         self.toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.toolbar.setStyleSheet("border: none;")
 
+        self.left_spacer = QWidget()
+        self.left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.right_spacer = QWidget()
+        self.right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.pre17_toolbar.addWidget(self.left_spacer)
+        self.pre17_toolbar.addWidget(self.right_click_text)
+        self.pre17_toolbar.addWidget(self.right_spacer)
+        self.pre17_toolbar.setMovable(False)
+        self.pre17_toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.pre17_toolbar.setStyleSheet("border: none;")
+
         if SETTINGS.value("Theme", "dark") == "dark":
             self.setStyleSheet("background-color: black;")
         self.move(int(SETTINGS.value("TimerPosX", 0)), int(SETTINGS.value("TimerPosY", 0)))
+
+        self.right_clicked = False
 
         self.show()
         self.timer.start(200)
@@ -201,7 +243,16 @@ class TimerWindow(QMainWindow):
             level_data = get_last_played_level()
             self.world_name.setText(f"{level_data['name']} ({level_data['version']})")
 
-            ticks = level_data["igt"]
+            if level_data["pre17"]:
+                self.addToolBar(Qt.BottomToolBarArea, self.pre17_toolbar)
+                if self.right_clicked:
+                    SETTINGS.setValue("ResetTime", level_data["igt"])
+                    self.right_clicked = False
+                ticks = level_data["igt"] - int(SETTINGS.value("ResetTime", level_data["igt"]))
+            else:
+                self.removeToolBar(self.pre17_toolbar)
+                ticks = level_data["igt"]
+
             seconds = ticks // 20
             h = str(seconds // 60 // 60)
             m = str(seconds // 60 % 60)
@@ -209,7 +260,10 @@ class TimerWindow(QMainWindow):
             ms = str(int(ticks % 20 / 2 * 100))
 
             self.igt.setText(f"{h.zfill(2)}:{m.zfill(2)}:{s.zfill(2)}.{ms.zfill(3)}")
-            self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.igt.sizeHint().width()]) + 16)
+            if level_data["pre17"]:
+                self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.pre17_toolbar.sizeHint().width(), self.igt.sizeHint().width()]) + 16)
+            else:
+                self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.igt.sizeHint().width()]) + 16)
         except:
             self.world_name.setText("ERROR:  No World Found")
             self.world_name.setStyleSheet("color: red;")
@@ -228,8 +282,11 @@ class TimerWindow(QMainWindow):
         SettingsWindow(self)
 
     def mousePressEvent(self, event):
-        self.timer.stop()
-        self.oldPos = event.globalPos()
+        if event.button() == Qt.LeftButton:
+            self.timer.stop()
+            self.oldPos = event.globalPos()
+        else:
+            self.right_clicked = True
 
     def mouseReleaseEvent(self, event):
         self.timer.start(200)
