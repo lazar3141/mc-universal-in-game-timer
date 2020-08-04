@@ -30,7 +30,7 @@ If you don't use the default Minecraft directory, then you'll have to go into th
 
 If the timer doesn't update when you make a new world, then there are two possibilities. One is that you migrated your Minecraft directory, but the old one still exists and that's where the timer is reading from. Change your directory to the correct one in the timer's settings.
 
-Here's the other possibility: In some Minecraft versions, the timer won't update on its own when you make a new world. Pressing `esc` twice to pause and unpause the game should cause the timer to show the correct world and time.
+Here's the other possibility: In some Minecraft versions, the timer won't update on its own when you make a new world. It will still update on saves, so pressing `esc` twice to pause and unpause the game should cause the timer to show the correct world and time.
 
 The timer reads the in-game time (IGT) from the world (1.7.2+) or game (1.6.4 and earlier) statistics file, so it will always show an accurate time.
 
