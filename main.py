@@ -34,17 +34,14 @@ except:
 __version__ = open(os.path.join(DIRECTORY, "VERSION.txt")).read()
 
 SETTINGS = QSettings(QSettings.NativeFormat, QSettings.UserScope, "Minecraft Universal In-Game Timer")
-SETTINGS.remove("ResetTime")
+
+SETTINGS.setValue("ResetTime", utils.get_pre17_igt(SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir())))
 
 
 def get_last_played_level():
     levels = []
     mc_dir = SETTINGS.value("MinecraftDirectory", utils.get_default_minecraft_dir())
     mc_saves = os.path.join(mc_dir, "saves")
-
-    if os.path.exists(os.path.join(mc_dir, "stats")):
-        with open(os.path.join(mc_dir, "stats", os.listdir(os.path.join(mc_dir, "stats"))[0]), "r") as f:
-            pre17_stats = json.load(f)
 
     for world in os.listdir(mc_saves):
         try:
@@ -79,7 +76,7 @@ def get_last_played_level():
                         "name": str(level["Data"]["LevelName"]),
                         "last_played": int(str(level["Data"]["LastPlayed"])),
                         "version": "Pre 1.7.2",
-                        "igt": next(i for i in pre17_stats["stats-change"] if "1100" in i)["1100"],
+                        "igt": utils.get_pre17_igt(mc_dir),
                         "pre17": True
                     }
             levels.append(data)
@@ -250,7 +247,7 @@ class TimerWindow(QMainWindow):
                 if self.right_clicked:
                     SETTINGS.setValue("ResetTime", level_data["igt"])
                     self.right_clicked = False
-                ticks = level_data["igt"] - int(SETTINGS.value("ResetTime", 0))
+                ticks = level_data["igt"] - int(SETTINGS.value("ResetTime"))
             else:
                 self.pre17_toolbar.close()
                 ticks = level_data["igt"]
