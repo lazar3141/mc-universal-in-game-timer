@@ -47,10 +47,20 @@ def set_theme_color(label, settings):
 
 
 def convert_hotkey(hotkey):
-    if sys.platform == "darwin":
-        hotkey = hotkey.replace("Ctrl", "command").replace("Meta", "ctrl")
-    hotkey = hotkey.replace(",", "comma").replace("++", "+plus")
-    return hotkey
+    all_hotkeys = []
+    split_hotkey = hotkey.split(", ")
+
+    for key in split_hotkey:
+        if sys.platform == "darwin":
+            key = key.replace("Ctrl", "cmd").replace("Meta", "ctrl")
+
+        key_list = key.split("+")
+        for h in key_list.copy():
+            if len(h) > 1:
+                key_list[key_list.index(h)] = "<" + h + ">"
+        all_hotkeys.append("+".join(key_list))
+
+    return all_hotkeys
 
 
 class WorkerSignals(QObject):
