@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 # Ignore Requirements
-elevate
-keyboard
 nbt
+pynput
 PyQt5
