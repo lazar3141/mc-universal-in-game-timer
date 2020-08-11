@@ -14,6 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from PyQt5.QtCore import QRunnable, pyqtSlot, QObject, pyqtSignal
 import rapidjson as json
 
 import sys
@@ -36,3 +37,36 @@ def get_pre17_igt(mc_dir):
         return next(i for i in pre17_stats["stats-change"] if "1100" in i)["1100"]
     else:
         return 0
+
+
+def set_theme_color(label, settings):
+    if settings.value("Theme", "dark") == "dark":
+        label.setStyleSheet("color: white;")
+    else:
+        label.setStyleSheet("color: black;")
+
+
+def convert_hotkey(hotkey):
+    if sys.platform == "darwin":
+        hotkey = hotkey.replace("Ctrl", "command").replace("Meta", "ctrl")
+    hotkey = hotkey.replace(",", "comma").replace("++", "+plus")
+    return hotkey
+
+
+class WorkerSignals(QObject):
+    result = pyqtSignal(object)
+
+
+class Worker(QRunnable):
+    def __init__(self, function):
+        super(Worker, self).__init__()
+        self.function = function
+        self.signal = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            result = self.function()
+            self.signal.result.emit(result)
+        except:
+            self.signal.result.emit(None)
