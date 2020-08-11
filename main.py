@@ -65,13 +65,14 @@ def get_last_played_level():
     worlds_recently_modified = sorted([os.path.join(mc_saves, s) for s in os.listdir(mc_saves)], key=os.path.getmtime, reverse=True)
     for w in worlds_recently_modified.copy()[:5]:
         try:
-            if not int(str(NBTFile(os.path.join(w, "level.dat"))["Data"]["Time"])):
-                worlds_recently_modified.remove(w)
+            world = w
+            level = NBTFile(os.path.join(world, "level.dat"))
+            if not int(str(level["Data"]["Time"])):
+                continue
+            else:
+                break
         except:
-            worlds_recently_modified.remove(w)
-
-    world = worlds_recently_modified[0]
-    level = NBTFile(os.path.join(world, "level.dat"))
+            continue
 
     try:
         with open(os.path.join(world, "stats", os.listdir(os.path.join(world, "stats"))[0]), "r") as f:
@@ -334,7 +335,10 @@ class TimerWindow(QMainWindow):
 
         self.show()
 
-        self.igt_timer.start(50)
+        if not bool(int(SETTINGS.value("IGTTimer", 1))) and not bool(int(SETTINGS.value("ShowWorldName", 1))):
+            self.world_name.setText("")
+        else:
+            self.igt_timer.start(50)
 
         if bool(int(SETTINGS.value("RTATimer", 0))):
             rta_hotkey = SETTINGS.value("RTAHotkey", None)
@@ -366,11 +370,15 @@ class TimerWindow(QMainWindow):
 
                 if level_data["seen_credits"] and bool(int(SETTINGS.value("AutoStopTimers", 0))):
                     if not self.stopped_rta_after_credits:
-                        self.stop_timer = True
+                        if not self.stop_timer:
+                            self.rta_hotkey_pressed()
                         self.stopped_rta_after_credits = True
                     self.igt.setStyleSheet(f"color: {MC_COLORS['blue']};")
+                    utils.set_theme_color(self.world_name, SETTINGS)
                     self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.widget_layout.sizeHint().width()]) + 16)
                     return
+                else:
+                    self.stopped_rta_after_credits = False
 
                 if level_data["pre17"]:
                     self.right_click_text.show()
@@ -397,7 +405,7 @@ class TimerWindow(QMainWindow):
                 self.setFixedWidth(max([self.toolbar.sizeHint().width(), self.widget_layout.sizeHint().width()]) + 16)
             except:
                 self.world_name.setText("ERROR:  No World Found")
-                self.world_name.setStyleSheet(f"color: {MC_COLORS['dark_red']};")
+                self.world_name.setStyleSheet("color: red;")
                 if bool(int(SETTINGS.value("ShowHours", 1))):
                     self.igt.setText("--:--:--.---")
                 else:
@@ -414,7 +422,10 @@ class TimerWindow(QMainWindow):
             self.rta.setStyleSheet(f"color: {MC_COLORS['red']};")
             return
 
-        self.rta.setStyleSheet(f"color: {MC_COLORS['dark_green']};")
+        if SETTINGS.value("Theme", "dark") == "dark":
+            self.rta.setStyleSheet(f"color: {MC_COLORS['green']};")
+        else:
+            self.rta.setStyleSheet(f"color: {MC_COLORS['dark_green']};")
 
         milliseconds = round(time.time() * 1000) - self.timestamp_ms - self.stopped_time
         seconds = milliseconds // 1000
@@ -453,6 +464,7 @@ class TimerWindow(QMainWindow):
             self.global_hotkey_listener.stop()
         self.igt_timer.stop()
         self.rta_timer.stop()
+        self.threadpool.clear()
         self.close()
 
     def open_settings(self):
