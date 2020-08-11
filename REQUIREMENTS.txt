@@ -1,5 +1,4 @@
 PyQt5
 nbt
 python-rapidjson
-keyboard
-git+https://github.com/catb0t/elevate
+pynput
