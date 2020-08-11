@@ -17,6 +17,8 @@ Ender Dragon icon from the [Minecraft Wiki](https://minecraft.gamepedia.com/Mine
 
 ### Works in every single Minecraft version since 1.0!
 
+### [Here's a video](https://www.youtube.com/watch?v=fPESBmKYi0Q) showing how it works
+
 ## Usage
 Click the X in the top-left corner to close the timer.
 
