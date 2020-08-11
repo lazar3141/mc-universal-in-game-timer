@@ -12,7 +12,7 @@ setup(
     app=["main.py"],
     data_files=["VERSION.txt", "SettingsWindow.ui"],
     options={"py2app": {
-        "packages": ["PyQt5", "nbt"],
+        "packages": ["PyQt5", "nbt", "keyboard", "elevate"],
         "iconfile": os.path.join("Resources", "icons.icns"),
         "resources": "Resources",
     }},
