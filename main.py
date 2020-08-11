@@ -360,6 +360,7 @@ class TimerWindow(QMainWindow):
             try:
                 if bool(int(SETTINGS.value("ShowWorldName", 1))):
                     self.world_name.setText(f"{level_data['name']} ({level_data['version']})")
+                    utils.set_theme_color(self.world_name, SETTINGS)
                 else:
                     self.world_name.setText("")
 
