@@ -19,9 +19,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5 import uic
 from nbt.nbt import NBTFile
+from pynput import keyboard
 import rapidjson as json
-import keyboard
-import elevate
 
 import sys
 import os
@@ -327,27 +326,32 @@ class TimerWindow(QMainWindow):
         self.right_clicked = False
         self.stop_timer = True
         self.timestamp_ms = round(time.time() * 1000)
-        self.stopped_time_at = round(time.time() * 1000)
+        self.stopped_time_at = self.timestamp_ms
         self.stopped_time = 0
         self.stopped_rta_after_credits = False
 
-        self.rta_hotkey_handler = None
-        self.rta_reset_hotkey_handler = None
-
-        if bool(int(SETTINGS.value("RTATimer", 0))):
-            if sys.platform != "win32":
-                elevate.elevate()
+        self.global_hotkey_listener = None
 
         self.show()
 
         self.igt_timer.start(50)
+
         if bool(int(SETTINGS.value("RTATimer", 0))):
             rta_hotkey = SETTINGS.value("RTAHotkey", None)
             rta_reset_hotkey = SETTINGS.value("RTAResetHotkey", None)
+            global_hotkeys = {}
+
             if rta_hotkey:
-                self.rta_hotkey_handler = keyboard.add_hotkey(utils.convert_hotkey(rta_hotkey), self.rta_hotkey_pressed)
+                for hotkey in utils.convert_hotkey(rta_hotkey):
+                    global_hotkeys.update({hotkey: self.rta_hotkey_pressed})
             if rta_reset_hotkey:
-                self.rta_reset_hotkey_handler = keyboard.add_hotkey(utils.convert_hotkey(rta_reset_hotkey), self.rta_reset_hotkey_pressed)
+                for hotkey in utils.convert_hotkey(rta_reset_hotkey):
+                    global_hotkeys.update({hotkey: self.rta_reset_hotkey_pressed})
+
+            if global_hotkeys:
+                self.global_hotkey_listener = keyboard.GlobalHotKeys(global_hotkeys)
+                self.global_hotkey_listener.start()
+
             self.rta_timer.start(1)
 
     def update_igt(self):
@@ -444,10 +448,8 @@ class TimerWindow(QMainWindow):
     def close_window(self):
         SETTINGS.setValue("TimerPosX", self.x())
         SETTINGS.setValue("TimerPosY", self.y())
-        if self.rta_hotkey_handler:
-            keyboard.remove_hotkey(self.rta_hotkey_handler)
-        if self.rta_reset_hotkey_handler:
-            keyboard.remove_hotkey(self.rta_reset_hotkey_handler)
+        if self.global_hotkey_listener:
+            self.global_hotkey_listener.stop()
         self.igt_timer.stop()
         self.rta_timer.stop()
         self.close()
