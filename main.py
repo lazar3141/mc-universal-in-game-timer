@@ -175,7 +175,7 @@ class SettingsWindow(QMainWindow):
         self.continue_button.clicked.connect(self.save_and_exit_settings)
 
         frame = self.frameGeometry()
-        screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
+        screen = QDesktopWidget().primaryScreen()
         screen_center = QDesktopWidget().screenGeometry(screen).center()
         frame.moveCenter(screen_center)
         self.move(frame.topLeft())
